@@ -185,6 +185,8 @@ func (c *Coordinator) checkingExpiredTasks() {
 // if the entire job has finished.
 func (c *Coordinator) Done() bool {
 	ret := false
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if c.mapTasks.Len() == 0 && len(c.reduceTasks) == 0 && len(c.runningTasks) == 0 {
 		ret = true
 	}
