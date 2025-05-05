@@ -94,7 +94,7 @@ func (c *Coordinator) AcquireTask(args *ExampleArgs, taskDef *TaskDefinition) er
 					taskDef.TaskType = task.TaskType
 					taskDef.MapTask = task.MapTask
 					taskDef.ReduceTask = task.ReduceTask
-					delete(c.reduceTasks, task.ReduceTask.reducerIndex)
+					delete(c.reduceTasks, task.ReduceTask.ReducerIndex)
 					break
 				}
 			}
@@ -135,13 +135,13 @@ func (c *Coordinator) mergeReduceTaskForReducer(mapTaskResult *TaskResult) error
 				TaskID:   c.idGenerator(),
 				TaskType: REDUCE,
 				ReduceTask: &ReduceTask{
-					reducerIndex:       idx,
-					intermedicateFiles: []string{file},
+					ReducerIndex:       idx,
+					IntermedicateFiles: []string{file},
 				},
 				Status: Ready,
 			}
 		} else {
-			c.reduceTasks[idx].ReduceTask.intermedicateFiles = append(c.reduceTasks[idx].ReduceTask.intermedicateFiles, file)
+			c.reduceTasks[idx].ReduceTask.IntermedicateFiles = append(c.reduceTasks[idx].ReduceTask.IntermedicateFiles, file)
 		}
 	}
 	return nil
@@ -165,9 +165,9 @@ func (c *Coordinator) server() {
 // if the entire job has finished.
 func (c *Coordinator) Done() bool {
 	ret := false
-
-	// Your code here.
-
+	if c.mapTasks.Len() == 0 && len(c.reduceTasks) == 0 && len(c.runningTasks) == 0 {
+		ret = true
+	}
 	return ret
 }
 
@@ -188,8 +188,8 @@ func MakeCoordinator(files []string, nReduce int) *Coordinator {
 			TaskID:   c.idGenerator(),
 			TaskType: MAP,
 			MapTask: &MapTask{
-				filePath: file,
-				nReduce:  nReduce,
+				FilePath: file,
+				NReduce:  nReduce,
 			},
 			Status: Ready,
 		})

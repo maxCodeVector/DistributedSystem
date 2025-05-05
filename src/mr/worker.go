@@ -41,14 +41,14 @@ const (
 )
 
 type MapTask struct {
-	filePath string
-	content  string
-	nReduce  int // the number of reduce tasks
+	FilePath string
+	Content  string
+	NReduce  int // the number of reduce tasks
 }
 
 type ReduceTask struct {
-	reducerIndex       int      // the key bucket calculated by ihash(key) % NReduce
-	intermedicateFiles []string // each file store key value pairs
+	ReducerIndex       int      // the key bucket calculated by ihash(key) % NReduce
+	IntermedicateFiles []string // each file store key value pairs
 }
 
 // use ihash(key) % NReduce to choose the reduce
@@ -80,7 +80,7 @@ func Worker(mapf func(string, string) []KeyValue,
 			performReduceTask(task, reducef)
 		case TERMINAL:
 			// no more tasks, exit
-			log.Printf("no more tasks, exit")
+			// log.Printf("no more tasks, exit")
 			return
 		default:
 			log.Fatalf("unknown task type %v", task.TaskType)
@@ -106,18 +106,18 @@ func readFile(filename string) string {
 func performMapTask(task *TaskDefinition, mapf func(string, string) []KeyValue) {
 	// do map task
 	mapTask := task.MapTask
-	content := readFile(mapTask.filePath)
-	values := mapf(mapTask.filePath, content)
+	content := readFile(mapTask.FilePath)
+	values := mapf(mapTask.FilePath, content)
 
-	filePathPrefix := fmt.Sprintf("mr-%d-%d", task.TaskID, task.AttemptID)
-	resultFilePaths := saveKeyValueToFiles(filePathPrefix, mapTask.nReduce, values)
+	filePathPrefix := fmt.Sprintf("mr-out-int-%d-%d", task.TaskID, task.AttemptID)
+	resultFilePaths := saveKeyValueToFiles(filePathPrefix, mapTask.NReduce, values)
 	SendMapTaskResult(task.TaskID, task.AttemptID, resultFilePaths)
 }
 
 func performReduceTask(task *TaskDefinition, reducef func(string, []string) string) {
 	// do reduce task
 	reduceTask := task.ReduceTask
-	intermediateFiles := reduceTask.intermedicateFiles
+	intermediateFiles := reduceTask.IntermedicateFiles
 	// read the files and merge them into a map
 	kvMap := make(map[string][]string)
 	for _, filePath := range intermediateFiles {
@@ -137,7 +137,7 @@ func performReduceTask(task *TaskDefinition, reducef func(string, []string) stri
 		}
 	}
 
-	resultFilePath := fmt.Sprintf("mr-out-%d-%d", task.TaskID, task.AttemptID)
+	resultFilePath := fmt.Sprintf("mr-out-%d", reduceTask.ReducerIndex)
 	resultFile, err := os.Create(resultFilePath)
 	if err != nil {
 		log.Fatalf("cannot create %v", resultFilePath)
@@ -189,12 +189,12 @@ func getTask() *TaskDefinition {
 	// receiving server that we'd like to call
 	// the Example() method of struct Coordinator.
 	ok := call("Coordinator.AcquireTask", &ExampleArgs{}, &taskDef)
-	if ok {
+	if ok && (taskDef.TaskType == TERMINAL || taskDef.TaskID > 0) {
 		// reply.Y should be 100.
-		fmt.Printf("get Task %v\n", taskDef)
+		// fmt.Printf("get Task %v\n", taskDef)
 		return &taskDef
 	} else {
-		fmt.Printf("call failed!\n")
+		// fmt.Printf("call failed!\n")
 		return nil
 	}
 }
@@ -246,11 +246,8 @@ func SendMapTaskResult(taskId int, attemptID int, resultFilePaths []string) {
 	// receiving server that we'd like to call
 	// the Example() method of struct Coordinator.
 	ok := call("Coordinator.SendTaskResult", &taskResult, &reply)
-	if ok {
-		// reply.Y should be 100.
-		fmt.Printf("send Map TaskResult %v\n", taskResult)
-	} else {
-		fmt.Printf("call failed!\n")
+	if !ok {
+		// fmt.Printf("call failed!\n")
 	}
 }
 
@@ -272,11 +269,8 @@ func SendReduceTaskResult(taskId int, attemptID int, resultPath string) {
 	// receiving server that we'd like to call
 	// the Example() method of struct Coordinator.
 	ok := call("Coordinator.SendTaskResult", &taskResult, &reply)
-	if ok {
-		// reply.Y should be 100.
-		fmt.Printf("send Reduce TaskResult %v\n", taskResult)
-	} else {
-		fmt.Printf("call failed!\n")
+	if !ok {
+		// fmt.Printf("call failed!\n")
 	}
 }
 
