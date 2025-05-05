@@ -159,6 +159,26 @@ func (c *Coordinator) server() {
 		log.Fatal("listen error:", e)
 	}
 	go http.Serve(l, nil)
+	go c.checkingExpiredTasks()
+}
+
+func (c *Coordinator) checkingExpiredTasks() {
+	for {
+		c.mu.Lock()
+		for _, task := range c.runningTasks {
+			if time.Now().After(task.ExpiredAt) {
+				task.Status = Ready
+				if task.TaskType == MAP {
+					c.mapTasks.PushBack(task)
+				} else {
+					c.reduceTasks[task.ReduceTask.ReducerIndex] = task
+				}
+				delete(c.runningTasks, task.TaskID)
+			}
+		}
+		c.mu.Unlock()
+		time.Sleep(1 * time.Second)
+	}
 }
 
 // main/mrcoordinator.go calls Done() periodically to find out

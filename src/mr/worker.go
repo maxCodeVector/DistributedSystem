@@ -109,7 +109,7 @@ func performMapTask(task *TaskDefinition, mapf func(string, string) []KeyValue) 
 	content := readFile(mapTask.FilePath)
 	values := mapf(mapTask.FilePath, content)
 
-	filePathPrefix := fmt.Sprintf("mr-out-int-%d-%d", task.TaskID, task.AttemptID)
+	filePathPrefix := fmt.Sprintf("mr-int-%d-%d", task.TaskID, task.AttemptID)
 	resultFilePaths := saveKeyValueToFiles(filePathPrefix, mapTask.NReduce, values)
 	SendMapTaskResult(task.TaskID, task.AttemptID, resultFilePaths)
 }
@@ -189,12 +189,15 @@ func getTask() *TaskDefinition {
 	// receiving server that we'd like to call
 	// the Example() method of struct Coordinator.
 	ok := call("Coordinator.AcquireTask", &ExampleArgs{}, &taskDef)
-	if ok && (taskDef.TaskType == TERMINAL || taskDef.TaskID > 0) {
-		// reply.Y should be 100.
-		// fmt.Printf("get Task %v\n", taskDef)
-		return &taskDef
+	if ok {
+		if taskDef.TaskType == TERMINAL || taskDef.TaskID > 0 {
+			return &taskDef
+		} else {
+			// receive empty tasks
+			return nil
+		}
 	} else {
-		// fmt.Printf("call failed!\n")
+		fmt.Printf("get tasks failed, rpc call failed\n")
 		return nil
 	}
 }
@@ -247,7 +250,7 @@ func SendMapTaskResult(taskId int, attemptID int, resultFilePaths []string) {
 	// the Example() method of struct Coordinator.
 	ok := call("Coordinator.SendTaskResult", &taskResult, &reply)
 	if !ok {
-		// fmt.Printf("call failed!\n")
+		fmt.Printf("send map task result failed!\n")
 	}
 }
 
@@ -270,7 +273,7 @@ func SendReduceTaskResult(taskId int, attemptID int, resultPath string) {
 	// the Example() method of struct Coordinator.
 	ok := call("Coordinator.SendTaskResult", &taskResult, &reply)
 	if !ok {
-		// fmt.Printf("call failed!\n")
+		fmt.Printf("send reduce task result failed!\n")
 	}
 }
 
