@@ -1,0 +1,50 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch mrsequential",
+            "type": "go",
+            "request": "launch",
+            "mode": "exec", // Automatically handles build and execution
+            "program": "${workspaceFolder}/src/main/mrsequential", // Path to the Go file
+            "cwd": "${workspaceFolder}/src/main", // Set the working directory
+            "args": [
+                "../mrapps/wc.so",
+                "pg-frankenstein.txt",
+                "pg-huckleberry_finn.txt"
+            ],
+            "env": {
+                "GOFLAGS": "" // Ensure the plugin build mode is respected
+            }
+        },
+        {
+            "name": "Launch mrcoordinator",
+            "type": "go",
+            "request": "launch",
+            "mode": "exec", // Automatically handles build and execution
+            "program": "${workspaceFolder}/src/main/mrcoordinator", // Path to the Go file
+            "cwd": "${workspaceFolder}/src/main", // Set the working directory
+            "args": [
+                "pg-frankenstein.txt",
+                "pg-huckleberry_finn.txt"
+            ],
+            "env": {
+                "GOFLAGS": "" // Ensure the plugin build mode is respected
+            }
+        },
+        {
+            "name": "Launch mrworker",
+            "type": "go",
+            "request": "launch",
+            "mode": "exec", // Automatically handles build and execution
+            "program": "${workspaceFolder}/src/main/mrworker", // Path to the Go file
+            "cwd": "${workspaceFolder}/src/main", // Set the working directory
+            "args": [
+                "../mrapps/wc.so"
+            ],
+            "env": {
+                "GOFLAGS": "" // Ensure the plugin build mode is respected
+            }
+        }
+    ]
+}
